@@ -3174,18 +3174,18 @@ resource "aws_db_instance" "snapshot" {
 func testAccAWSDBInstanceConfig_S3Import(bucketName string, bucketPrefix string, uniqueId string) string {
 	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_s3_bucket" "xtrabackup" {
-  bucket = "%s"
+  bucket = "%[1]s"
 }
 
 resource "aws_s3_bucket_object" "xtrabackup_db" {
   bucket = aws_s3_bucket.xtrabackup.id
-  key    = "%s/mysql-5-6-xtrabackup.tar.gz"
+  key    = "%[2]s/mysql-5-6-xtrabackup.tar.gz"
   source = "./testdata/mysql-5-6-xtrabackup.tar.gz"
   etag   = filemd5("./testdata/mysql-5-6-xtrabackup.tar.gz")
 }
 
 resource "aws_iam_role" "rds_s3_access_role" {
-  name = "%s-role"
+  name = "%[3]s-role"
 
   assume_role_policy = <<EOF
 {
@@ -3205,7 +3205,7 @@ EOF
 }
 
 resource "aws_iam_policy" "test" {
-  name = "%s-policy"
+  name = "%[3]s-policy"
 
   policy = <<POLICY
 {
@@ -3227,7 +3227,7 @@ POLICY
 }
 
 resource "aws_iam_policy_attachment" "test-attach" {
-  name = "%s-policy-attachment"
+  name = "%[3]s-policy-attachment"
 
   roles = [
     aws_iam_role.rds_s3_access_role.name,
@@ -3266,7 +3266,7 @@ resource "aws_subnet" "bar" {
 }
 
 resource "aws_db_subnet_group" "foo" {
-  name       = "%s-subnet-group"
+  name       = "%[3]s-subnet-group"
   subnet_ids = [aws_subnet.foo.id, aws_subnet.bar.id]
 
   tags = {
@@ -3275,7 +3275,7 @@ resource "aws_db_subnet_group" "foo" {
 }
 
 resource "aws_db_instance" "s3" {
-  identifier = "%s-db"
+  identifier = "%[3]s-db"
 
   allocated_storage          = 5
   engine                     = "mysql"
@@ -3298,17 +3298,17 @@ resource "aws_db_instance" "s3" {
     source_engine_version = "5.6"
 
     bucket_name    = aws_s3_bucket.xtrabackup.bucket
-    bucket_prefix  = "%s"
+    bucket_prefix  = "%[2]s"
     ingestion_role = aws_iam_role.rds_s3_access_role.arn
   }
 }
-`, bucketName, bucketPrefix, uniqueId, uniqueId, uniqueId, uniqueId, uniqueId, bucketPrefix))
+`, bucketName, bucketPrefix, uniqueId))
 }
 
 func testAccAWSDBInstanceConfig_FinalSnapshotIdentifier(rInt int) string {
 	return fmt.Sprintf(`
 resource "aws_db_instance" "snapshot" {
-  identifier = "tf-snapshot-%d"
+  identifier = "tf-snapshot-%[1]d"
 
   allocated_storage       = 5
   engine                  = "mysql"
@@ -3323,13 +3323,13 @@ resource "aws_db_instance" "snapshot" {
   parameter_group_name = "default.mysql5.6"
 
   copy_tags_to_snapshot     = true
-  final_snapshot_identifier = "foobarbaz-test-terraform-final-snapshot-%d"
+  final_snapshot_identifier = "foobarbaz-test-terraform-final-snapshot-%[1]d"
 
   tags = {
     Name = "tf-tags-db"
   }
 }
-`, rInt, rInt)
+`, rInt)
 }
 
 func testAccDbInstanceConfigMonitoringInterval(rName string, monitoringInterval int) string {
@@ -3386,7 +3386,7 @@ resource "aws_db_instance" "test" {
   allocated_storage   = 5
   engine              = "mysql"
   engine_version      = "5.6.35"
-  identifier          = %[1]q
+  identifier          = %q
   instance_class      = "db.t2.micro"
   name                = "baz"
   password            = "barbarbarbar"
@@ -3537,7 +3537,7 @@ resource "aws_subnet" "bar" {
 }
 
 resource "aws_db_subnet_group" "foo" {
-  name       = "foo-%s"
+  name       = "foo-%[1]s"
   subnet_ids = [aws_subnet.foo.id, aws_subnet.bar.id]
 
   tags = {
@@ -3546,7 +3546,7 @@ resource "aws_db_subnet_group" "foo" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier           = "mydb-rds-%s"
+  identifier           = "mydb-rds-%[1]s"
   engine               = "mysql"
   engine_version       = "5.6.35"
   instance_class       = "db.t2.micro"
@@ -3562,7 +3562,7 @@ resource "aws_db_instance" "bar" {
   backup_retention_period = 0
   apply_immediately       = true
 }
-`, rName, rName))
+`, rName))
 }
 
 func testAccAWSDBInstanceConfigWithSubnetGroupUpdated(rName string) string {
@@ -3624,7 +3624,7 @@ resource "aws_subnet" "another_test" {
 }
 
 resource "aws_db_subnet_group" "foo" {
-  name       = "foo-%s"
+  name       = "foo-%[1]s"
   subnet_ids = [aws_subnet.foo.id, aws_subnet.bar.id]
 
   tags = {
@@ -3633,7 +3633,7 @@ resource "aws_db_subnet_group" "foo" {
 }
 
 resource "aws_db_subnet_group" "bar" {
-  name       = "bar-%s"
+  name       = "bar-%[1]s"
   subnet_ids = [aws_subnet.test.id, aws_subnet.another_test.id]
 
   tags = {
@@ -3642,7 +3642,7 @@ resource "aws_db_subnet_group" "bar" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier           = "mydb-rds-%s"
+  identifier           = "mydb-rds-%[1]s"
   engine               = "mysql"
   engine_version       = "5.6.35"
   instance_class       = "db.t2.micro"
@@ -3659,7 +3659,7 @@ resource "aws_db_instance" "bar" {
 
   apply_immediately = true
 }
-`, rName, rName, rName))
+`, rName))
 }
 
 func testAccAWSDBMSSQL_timezone(rInt int) string {
@@ -3674,7 +3674,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -3701,7 +3701,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "mssql" {
-  identifier = "tf-test-mssql-%d"
+  identifier = "tf-test-mssql-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
 
@@ -3719,7 +3719,7 @@ resource "aws_db_instance" "mssql" {
 }
 
 resource "aws_security_group" "rds-mssql" {
-  name = "tf-rds-mssql-test-%d"
+  name = "tf-rds-mssql-test-%[1]d"
 
   description = "TF Testing"
   vpc_id      = aws_vpc.foo.id
@@ -3734,7 +3734,7 @@ resource "aws_security_group_rule" "rds-mssql-1" {
 
   security_group_id = aws_security_group.rds-mssql.id
 }
-`, rInt, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBMSSQL_timezone_AKST(rInt int) string {
@@ -3749,7 +3749,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -3776,7 +3776,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "mssql" {
-  identifier = "tf-test-mssql-%d"
+  identifier = "tf-test-mssql-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
 
@@ -3795,7 +3795,7 @@ resource "aws_db_instance" "mssql" {
 }
 
 resource "aws_security_group" "rds-mssql" {
-  name = "tf-rds-mssql-test-%d"
+  name = "tf-rds-mssql-test-%[1]d"
 
   description = "TF Testing"
   vpc_id      = aws_vpc.foo.id
@@ -3810,7 +3810,7 @@ resource "aws_security_group_rule" "rds-mssql-1" {
 
   security_group_id = aws_security_group.rds-mssql.id
 }
-`, rInt, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBMSSQLDomain(rInt int) string {
@@ -3825,7 +3825,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -3852,7 +3852,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "mssql" {
-  identifier = "tf-test-mssql-%d"
+  identifier = "tf-test-mssql-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
 
@@ -3871,7 +3871,7 @@ resource "aws_db_instance" "mssql" {
 }
 
 resource "aws_security_group" "rds-mssql" {
-  name = "tf-rds-mssql-test-%d"
+  name = "tf-rds-mssql-test-%[1]d"
 
   description = "TF Testing"
   vpc_id      = aws_vpc.foo.id
@@ -3912,7 +3912,7 @@ resource "aws_directory_service_directory" "bar" {
 }
 
 resource "aws_iam_role" "role" {
-  name = "tf-acc-db-instance-mssql-domain-role-%d"
+  name = "tf-acc-db-instance-mssql-domain-role-%[1]d"
 
   assume_role_policy = <<EOF
 {
@@ -3935,7 +3935,7 @@ resource "aws_iam_role_policy_attachment" "attatch-policy" {
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSDirectoryServiceAccess"
 }
-`, rInt, rInt, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBMSSQLUpdateDomain(rInt int) string {
@@ -3950,7 +3950,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -3977,7 +3977,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "mssql" {
-  identifier = "tf-test-mssql-%d"
+  identifier = "tf-test-mssql-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
 
@@ -3997,7 +3997,7 @@ resource "aws_db_instance" "mssql" {
 }
 
 resource "aws_security_group" "rds-mssql" {
-  name = "tf-rds-mssql-test-%d"
+  name = "tf-rds-mssql-test-%[1]d"
 
   description = "TF Testing"
   vpc_id      = aws_vpc.foo.id
@@ -4038,7 +4038,7 @@ resource "aws_directory_service_directory" "bar" {
 }
 
 resource "aws_iam_role" "role" {
-  name = "tf-acc-db-instance-mssql-domain-role-%d"
+  name = "tf-acc-db-instance-mssql-domain-role-%[1]d"
 
   assume_role_policy = <<EOF
 {
@@ -4061,7 +4061,7 @@ resource "aws_iam_role_policy_attachment" "attatch-policy" {
   role       = aws_iam_role.role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSDirectoryServiceAccess"
 }
-`, rInt, rInt, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBMSSQLDomainSnapshotRestore(rInt int) string {
@@ -4290,17 +4290,17 @@ func testAccAWSDBInstanceConfigAllowMajorVersionUpgrade(rName string, allowMajor
 	return fmt.Sprintf(`
 resource "aws_db_instance" "test" {
   allocated_storage           = 10
-  allow_major_version_upgrade = %[2]t
+  allow_major_version_upgrade = %t
   engine                      = "MySQL"
   engine_version              = "5.6"
-  identifier                  = %[1]q
+  identifier                  = %q
   instance_class              = "db.t2.micro"
   name                        = "baz"
   password                    = "barbarbarbar"
   skip_final_snapshot         = true
   username                    = "foo"
 }
-`, rName, allowMajorVersionUpgrade)
+`, allowMajorVersionUpgrade, rName)
 }
 
 var testAccAWSDBInstanceConfigAutoMinorVersion = fmt.Sprintf(`
@@ -4329,7 +4329,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -4356,7 +4356,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier = "foobarbaz-test-terraform-%d"
+  identifier = "foobarbaz-test-terraform-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
   allocated_storage    = 10
@@ -4373,7 +4373,7 @@ resource "aws_db_instance" "bar" {
     "error",
   ]
 }
-`, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBInstanceConfigCloudwatchLogsExportConfigurationAdd(rInt int) string {
@@ -4388,7 +4388,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -4415,7 +4415,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier = "foobarbaz-test-terraform-%d"
+  identifier = "foobarbaz-test-terraform-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
   allocated_storage    = 10
@@ -4435,7 +4435,7 @@ resource "aws_db_instance" "bar" {
     "general",
   ]
 }
-`, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBInstanceConfigCloudwatchLogsExportConfigurationModify(rInt int) string {
@@ -4450,7 +4450,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -4477,7 +4477,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier = "foobarbaz-test-terraform-%d"
+  identifier = "foobarbaz-test-terraform-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
   allocated_storage    = 10
@@ -4497,7 +4497,7 @@ resource "aws_db_instance" "bar" {
     "slowquery",
   ]
 }
-`, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBInstanceConfigCloudwatchLogsExportConfigurationDelete(rInt int) string {
@@ -4512,7 +4512,7 @@ resource "aws_vpc" "foo" {
 }
 
 resource "aws_db_subnet_group" "rds_one" {
-  name        = "tf_acc_test_%d"
+  name        = "tf_acc_test_%[1]d"
   description = "db subnets for rds_one"
 
   subnet_ids = [aws_subnet.main.id, aws_subnet.other.id]
@@ -4539,7 +4539,7 @@ resource "aws_subnet" "other" {
 }
 
 resource "aws_db_instance" "bar" {
-  identifier = "foobarbaz-test-terraform-%d"
+  identifier = "foobarbaz-test-terraform-%[1]d"
 
   db_subnet_group_name = aws_db_subnet_group.rds_one.name
   allocated_storage    = 10
@@ -4553,7 +4553,7 @@ resource "aws_db_instance" "bar" {
 
   apply_immediately = true
 }
-`, rInt, rInt))
+`, rInt))
 }
 
 func testAccAWSDBInstanceConfigEc2Classic(rInt int) string {
@@ -4590,7 +4590,7 @@ resource "aws_db_instance" "test" {
 }
 
 func testAccAWSDBInstanceConfig_DbSubnetGroupName(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
@@ -4630,7 +4630,7 @@ resource "aws_db_instance" "test" {
 }
 
 func testAccAWSDBInstanceConfig_DbSubnetGroupName_RamShared(rName string) string {
-	return testAccAlternateAccountProviderConfig() + fmt.Sprintf(`
+	return composeConfig(testAccAlternateAccountProviderConfig(), fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   provider = "awsalternate"
 
@@ -4713,11 +4713,11 @@ resource "aws_db_instance" "test" {
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName)
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_DbSubnetGroupName_VpcSecurityGroupIds(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
@@ -4828,9 +4828,9 @@ func testAccAWSDBInstanceConfig_MaxAllocatedStorage(rName string, maxAllocatedSt
 resource "aws_db_instance" "test" {
   allocated_storage     = 5
   engine                = "mysql"
-  identifier            = %[1]q
+  identifier            = %q
   instance_class        = "db.t2.micro"
-  max_allocated_storage = %[2]d
+  max_allocated_storage = %d
   password              = "avoid-plaintext-passwords"
   username              = "tfacctest"
   skip_final_snapshot   = true
@@ -4843,9 +4843,9 @@ func testAccAWSDBInstanceConfig_Password(rName, password string) string {
 resource "aws_db_instance" "test" {
   allocated_storage   = 5
   engine              = "mysql"
-  identifier          = %[1]q
+  identifier          = %q
   instance_class      = "db.t2.micro"
-  password            = %[2]q
+  password            = %q
   username            = "tfacctest"
   skip_final_snapshot = true
 }
@@ -4858,7 +4858,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -4866,12 +4866,12 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_AllocatedStorage(rName string, allocatedStorage int) string {
@@ -4880,7 +4880,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -4888,13 +4888,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  allocated_storage   = %d
-  identifier          = %q
+  allocated_storage   = %[2]d
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, allocatedStorage, rName)
+`, rName, allocatedStorage)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_AllowMajorVersionUpgrade(rName string, allowMajorVersionUpgrade bool) string {
@@ -4926,7 +4926,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -4934,22 +4934,22 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  auto_minor_version_upgrade = %t
-  identifier                 = %q
+  auto_minor_version_upgrade = %[2]t
+  identifier                 = %[1]q
   instance_class             = aws_db_instance.source.instance_class
   replicate_source_db        = aws_db_instance.source.id
   skip_final_snapshot        = true
 }
-`, rName, autoMinorVersionUpgrade, rName)
+`, rName, autoMinorVersionUpgrade)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_AvailabilityZone(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -4958,12 +4958,12 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_instance" "test" {
   availability_zone   = data.aws_availability_zones.available.names[0]
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, rName))
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_BackupRetentionPeriod(rName string, backupRetentionPeriod int) string {
@@ -4972,7 +4972,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -4980,13 +4980,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  backup_retention_period = %d
-  identifier              = %q
+  backup_retention_period = %[2]d
+  identifier              = %[1]q
   instance_class          = aws_db_instance.source.instance_class
   replicate_source_db     = aws_db_instance.source.id
   skip_final_snapshot     = true
 }
-`, rName, backupRetentionPeriod, rName)
+`, rName, backupRetentionPeriod)
 }
 
 // We provide maintenance_window to prevent the following error from a randomly selected window:
@@ -4997,7 +4997,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5005,18 +5005,21 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  backup_window       = %q
-  identifier          = %q
+  backup_window       = %[2]q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  maintenance_window  = %q
+  maintenance_window  = %[3]q
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, backupWindow, rName, maintenanceWindow)
+`, rName, backupWindow, maintenanceWindow)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_DbSubnetGroupName(rName string) string {
-	return testAccAlternateRegionProviderConfig() + testAccAvailableAZsNoOptInConfig() + fmt.Sprintf(`
+	return composeConfig(
+		testAccAlternateRegionProviderConfig(),
+		testAccAvailableAZsNoOptInConfig(),
+		fmt.Sprintf(`
 data "aws_availability_zones" "alternate" {
   provider = "awsalternate"
 
@@ -5104,11 +5107,11 @@ resource "aws_db_instance" "test" {
   replicate_source_db  = aws_db_instance.source.arn
   skip_final_snapshot  = true
 }
-`, rName)
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_DbSubnetGroupName_RamShared(rName string) string {
-	return testAccAlternateAccountAndAlternateRegionProviderConfig() + fmt.Sprintf(`
+	return composeConfig(testAccAlternateAccountAndAlternateRegionProviderConfig() + fmt.Sprintf(`
 data "aws_availability_zones" "alternateaccountsameregion" {
   provider = "awsalternateaccountsameregion"
 
@@ -5157,7 +5160,7 @@ resource "aws_subnet" "sameaccountalternateregion" {
   count    = 2
   provider = "awssameaccountalternateregion"
 
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  availability_zone = data.aws_availability_zones.alternateaccountsameregion.names[count.index]
   cidr_block        = "10.1.${count.index}.0/24"
   vpc_id            = aws_vpc.sameaccountalternateregion.id
 
@@ -5170,7 +5173,7 @@ resource "aws_subnet" "alternateaccountsameregion" {
   count    = 2
   provider = "awsalternateaccountsameregion"
 
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  availability_zone = data.aws_availability_zones.alternateaccountsameregion.names[count.index]
   cidr_block        = "10.0.${count.index}.0/24"
   vpc_id            = aws_vpc.alternateaccountsameregion.id
 
@@ -5243,11 +5246,14 @@ resource "aws_db_instance" "test" {
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName)
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_DbSubnetGroupName_VpcSecurityGroupIds(rName string) string {
-	return testAccAlternateRegionProviderConfig() + testAccAvailableAZsNoOptInConfig() + fmt.Sprintf(`
+	return composeConfig(
+		testAccAlternateRegionProviderConfig(),
+		testAccAvailableAZsNoOptInConfig(),
+		fmt.Sprintf(`
 data "aws_availability_zones" "alternate" {
   provider = "awsalternate"
 
@@ -5286,7 +5292,7 @@ resource "aws_subnet" "alternate" {
   count    = 2
   provider = "awsalternate"
 
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  availability_zone = data.aws_availability_zones.alternate.names[count.index]
   cidr_block        = "10.1.${count.index}.0/24"
   vpc_id            = aws_vpc.alternate.id
 
@@ -5341,7 +5347,7 @@ resource "aws_db_instance" "test" {
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName)
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_DeletionProtection(rName string, deletionProtection bool) string {
@@ -5350,7 +5356,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5358,13 +5364,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  deletion_protection = %t
-  identifier          = %q
+  deletion_protection = %[2]t
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, deletionProtection, rName)
+`, rName, deletionProtection)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_IamDatabaseAuthenticationEnabled(rName string, iamDatabaseAuthenticationEnabled bool) string {
@@ -5373,7 +5379,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5381,13 +5387,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  iam_database_authentication_enabled = %t
-  identifier                          = %q
+  iam_database_authentication_enabled = %[2]t
+  identifier                          = %[1]q
   instance_class                      = aws_db_instance.source.instance_class
   replicate_source_db                 = aws_db_instance.source.id
   skip_final_snapshot                 = true
 }
-`, rName, iamDatabaseAuthenticationEnabled, rName)
+`, rName, iamDatabaseAuthenticationEnabled)
 }
 
 // We provide backup_window to prevent the following error from a randomly selected window:
@@ -5398,7 +5404,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5406,14 +5412,14 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  backup_window       = %q
-  identifier          = %q
+  backup_window       = %[2]q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  maintenance_window  = %q
+  maintenance_window  = %[3]q
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, backupWindow, rName, maintenanceWindow)
+`, rName, backupWindow, maintenanceWindow)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_MaxAllocatedStorage(rName string, maxAllocatedStorage int) string {
@@ -5446,7 +5452,7 @@ data "aws_partition" "current" {
 }
 
 resource "aws_iam_role" "test" {
-  name = %q
+  name = %[1]q
 
   assume_role_policy = <<EOF
 {
@@ -5474,7 +5480,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5482,14 +5488,14 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  monitoring_interval = %d
+  monitoring_interval = %[2]d
   monitoring_role_arn = aws_iam_role.test.arn
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName, monitoringInterval)
+`, rName, monitoringInterval)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_MultiAZ(rName string, multiAz bool) string {
@@ -5498,7 +5504,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5506,20 +5512,20 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  multi_az            = %t
+  multi_az            = %[2]t
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, rName, multiAz)
+`, rName, multiAz)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_ParameterGroupName(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_db_parameter_group" "test" {
   family = "mysql5.7"
-  name   = %q
+  name   = %[1]q
 
   parameter {
     name  = "sync_binlog"
@@ -5532,7 +5538,7 @@ resource "aws_db_instance" "source" {
   backup_retention_period = 1
   engine                  = "mysql"
   engine_version          = "5.7.22"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5540,13 +5546,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier           = %q
+  identifier           = %[1]q
   instance_class       = aws_db_instance.source.instance_class
   parameter_group_name = aws_db_parameter_group.test.id
   replicate_source_db  = aws_db_instance.source.id
   skip_final_snapshot  = true
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_Port(rName string, port int) string {
@@ -5555,7 +5561,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5563,13 +5569,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  port                = %d
+  port                = %[2]d
   replicate_source_db = aws_db_instance.source.id
   skip_final_snapshot = true
 }
-`, rName, rName, port)
+`, rName, port)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_VpcSecurityGroupIds(rName string) string {
@@ -5579,7 +5585,7 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "test" {
-  name   = %q
+  name   = %[1]q
   vpc_id = data.aws_vpc.default.id
 }
 
@@ -5587,7 +5593,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5595,13 +5601,13 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier             = %q
+  identifier             = %[1]q
   instance_class         = aws_db_instance.source.instance_class
   replicate_source_db    = aws_db_instance.source.id
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_ReplicateSourceDb_CACertificateIdentifier(rName string, caName string) string {
@@ -5610,22 +5616,22 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mysql"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
-  ca_cert_identifier      = %q
+  ca_cert_identifier      = %[2]q
   skip_final_snapshot     = true
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   replicate_source_db = aws_db_instance.source.id
-  ca_cert_identifier  = %q
+  ca_cert_identifier  = %[2]q
   skip_final_snapshot = true
 }
-`, rName, caName, rName, caName)
+`, rName, caName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier(rName string) string {
@@ -5633,7 +5639,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier(rName string) string {
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5642,16 +5648,16 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_AllocatedStorage(rName string, allocatedStorage int) string {
@@ -5659,7 +5665,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_AllocatedStorage(rName string
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5668,17 +5674,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  allocated_storage   = %d
-  identifier          = %q
+  allocated_storage   = %[2]d
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, allocatedStorage, rName)
+`, rName, allocatedStorage)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_Io1Storage(rName string, iops int) string {
@@ -5686,7 +5692,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_Io1Storage(rName string, iops
 resource "aws_db_instance" "source" {
   allocated_storage   = 200
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5695,19 +5701,19 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
   allocated_storage   = 200
-  iops                = %d
+  iops                = %[2]d
   storage_type        = "io1"
 }
-`, rName, rName, rName, iops)
+`, rName, iops)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_AllowMajorVersionUpgrade(rName string, allowMajorVersionUpgrade bool) string {
@@ -5745,7 +5751,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_AutoMinorVersionUpgrade(rName
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5754,25 +5760,25 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  auto_minor_version_upgrade = %t
-  identifier                 = %q
+  auto_minor_version_upgrade = %[2]t
+  identifier                 = %[1]q
   instance_class             = aws_db_instance.source.instance_class
   snapshot_identifier        = aws_db_snapshot.test.id
   skip_final_snapshot        = true
 }
-`, rName, rName, autoMinorVersionUpgrade, rName)
+`, rName, autoMinorVersionUpgrade)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_AvailabilityZone(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5781,17 +5787,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
   availability_zone   = data.aws_availability_zones.available.names[0]
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName))
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_BackupRetentionPeriod(rName string, backupRetentionPeriod int) string {
@@ -5799,7 +5805,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_BackupRetentionPeriod(rName s
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5808,17 +5814,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  backup_retention_period = %d
-  identifier              = %q
+  backup_retention_period = %[2]d
+  identifier              = %[1]q
   instance_class          = aws_db_instance.source.instance_class
   snapshot_identifier     = aws_db_snapshot.test.id
   skip_final_snapshot     = true
 }
-`, rName, rName, backupRetentionPeriod, rName)
+`, rName, backupRetentionPeriod)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_BackupRetentionPeriod_Unset(rName string) string {
@@ -5827,7 +5833,7 @@ resource "aws_db_instance" "source" {
   allocated_storage       = 5
   backup_retention_period = 1
   engine                  = "mariadb"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.t2.micro"
   password                = "avoid-plaintext-passwords"
   username                = "tfacctest"
@@ -5836,17 +5842,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
   backup_retention_period = 0
-  identifier              = %q
+  identifier              = %[1]q
   instance_class          = aws_db_instance.source.instance_class
   snapshot_identifier     = aws_db_snapshot.test.id
   skip_final_snapshot     = true
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 // We provide maintenance_window to prevent the following error from a randomly selected window:
@@ -5856,7 +5862,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_BackupWindow(rName, backupWin
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -5865,22 +5871,22 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  backup_window       = %q
-  identifier          = %q
+  backup_window       = %[2]q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  maintenance_window  = %q
+  maintenance_window  = %[3]q
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, backupWindow, rName, maintenanceWindow)
+`, rName, backupWindow, maintenanceWindow)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_DbSubnetGroupName(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
@@ -5932,7 +5938,9 @@ resource "aws_db_instance" "test" {
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_DbSubnetGroupName_RamShared(rName string) string {
-	return testAccAlternateAccountProviderConfig() + fmt.Sprintf(`
+	return composeConfig(
+		testAccAlternateAccountProviderConfig(),
+		fmt.Sprintf(`
 data "aws_availability_zones" "available" {
   provider = "awsalternate"
 
@@ -6027,11 +6035,11 @@ resource "aws_db_instance" "test" {
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName)
+`, rName))
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_DbSubnetGroupName_VpcSecurityGroupIds(rName string) string {
-	return composeConfig(testAccAvailableAZsNoOptInConfig(), testAccAvailableAZsNoOptInConfig()+fmt.Sprintf(`
+	return composeConfig(testAccAvailableAZsNoOptInConfig(), fmt.Sprintf(`
 resource "aws_vpc" "test" {
   cidr_block = "10.0.0.0/16"
 
@@ -6093,7 +6101,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_DeletionProtection(rName stri
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mysql"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6102,17 +6110,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  deletion_protection = %t
-  identifier          = %q
+  deletion_protection = %[2]t
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, deletionProtection, rName)
+`, rName, deletionProtection)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_IamDatabaseAuthenticationEnabled(rName string, iamDatabaseAuthenticationEnabled bool) string {
@@ -6120,7 +6128,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_IamDatabaseAuthenticationEnab
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mysql"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6129,17 +6137,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  iam_database_authentication_enabled = %t
-  identifier                          = %q
+  iam_database_authentication_enabled = %[2]t
+  identifier                          = %[1]q
   instance_class                      = aws_db_instance.source.instance_class
   snapshot_identifier                 = aws_db_snapshot.test.id
   skip_final_snapshot                 = true
 }
-`, rName, rName, iamDatabaseAuthenticationEnabled, rName)
+`, rName, iamDatabaseAuthenticationEnabled)
 }
 
 // We provide backup_window to prevent the following error from a randomly selected window:
@@ -6149,7 +6157,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_MaintenanceWindow(rName, back
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6158,18 +6166,18 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  backup_window       = %q
-  identifier          = %q
+  backup_window       = %[2]q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  maintenance_window  = %q
+  maintenance_window  = %[3]q
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, backupWindow, rName, maintenanceWindow)
+`, rName, backupWindow, maintenanceWindow)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_MaxAllocatedStorage(rName string, maxAllocatedStorage int) string {
@@ -6206,7 +6214,7 @@ data "aws_partition" "current" {
 }
 
 resource "aws_iam_role" "test" {
-  name = %q
+  name = %[1]q
 
   assume_role_policy = <<EOF
 {
@@ -6233,7 +6241,7 @@ resource "aws_iam_role_policy_attachment" "test" {
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6242,18 +6250,18 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  monitoring_interval = %d
+  monitoring_interval = %[2]d
   monitoring_role_arn = aws_iam_role.test.arn
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName, rName, monitoringInterval)
+`, rName, monitoringInterval)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_MultiAZ(rName string, multiAz bool) string {
@@ -6261,7 +6269,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_MultiAZ(rName string, multiAz
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6270,17 +6278,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  multi_az            = %t
+  multi_az            = %[2]t
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName, multiAz)
+`, rName, multiAz)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_MultiAZ_SQLServer(rName string, multiAz bool) string {
@@ -6288,7 +6296,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_MultiAZ_SQLServer(rName strin
 resource "aws_db_instance" "source" {
   allocated_storage   = 20
   engine              = "sqlserver-se"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.m4.large"
   license_model       = "license-included"
   password            = "avoid-plaintext-passwords"
@@ -6298,26 +6306,26 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
   # InvalidParameterValue: Mirroring cannot be applied to instances with backup retention set to zero.
   backup_retention_period = 1
-  identifier              = %q
+  identifier              = %[1]q
   instance_class          = aws_db_instance.source.instance_class
-  multi_az                = %t
+  multi_az                = %[2]t
   snapshot_identifier     = aws_db_snapshot.test.id
   skip_final_snapshot     = true
 }
-`, rName, rName, rName, multiAz)
+`, rName, multiAz)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_ParameterGroupName(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_db_parameter_group" "test" {
   family = "mariadb10.2"
-  name   = %q
+  name   = %[1]q
 
   parameter {
     name  = "sync_binlog"
@@ -6329,7 +6337,7 @@ resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
   engine_version      = "10.2.15"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6338,17 +6346,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier           = %q
+  identifier           = %[1]q
   instance_class       = aws_db_instance.source.instance_class
   parameter_group_name = aws_db_parameter_group.test.id
   snapshot_identifier  = aws_db_snapshot.test.id
   skip_final_snapshot  = true
 }
-`, rName, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_Port(rName string, port int) string {
@@ -6356,7 +6364,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_Port(rName string, port int) 
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6365,17 +6373,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
-  port                = %d
+  port                = %[2]d
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 }
-`, rName, rName, rName, port)
+`, rName, port)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_Tags(rName string) string {
@@ -6383,7 +6391,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_Tags(rName string) string {
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6392,11 +6400,11 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
@@ -6405,7 +6413,7 @@ resource "aws_db_instance" "test" {
     key1 = "value1"
   }
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_Tags_Unset(rName string) string {
@@ -6413,7 +6421,7 @@ func testAccAWSDBInstanceConfig_SnapshotIdentifier_Tags_Unset(rName string) stri
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6426,18 +6434,18 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier          = %q
+  identifier          = %[1]q
   instance_class      = aws_db_instance.source.instance_class
   snapshot_identifier = aws_db_snapshot.test.id
   skip_final_snapshot = true
 
   tags = {}
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_VpcSecurityGroupIds(rName string) string {
@@ -6447,14 +6455,14 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "test" {
-  name   = %q
+  name   = %[1]q
   vpc_id = data.aws_vpc.default.id
 }
 
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6463,17 +6471,17 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier             = %q
+  identifier             = %[1]q
   instance_class         = aws_db_instance.source.instance_class
   snapshot_identifier    = aws_db_snapshot.test.id
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.test.id]
 }
-`, rName, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_VpcSecurityGroupIds_Tags(rName string) string {
@@ -6483,14 +6491,14 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "test" {
-  name   = %q
+  name   = %[1]q
   vpc_id = data.aws_vpc.default.id
 }
 
 resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mariadb"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.t2.micro"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6499,11 +6507,11 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier             = %q
+  identifier             = %[1]q
   instance_class         = aws_db_instance.source.instance_class
   snapshot_identifier    = aws_db_snapshot.test.id
   skip_final_snapshot    = true
@@ -6513,7 +6521,7 @@ resource "aws_db_instance" "test" {
     key1 = "value1"
   }
 }
-`, rName, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstancePerformanceInsightsDisabled(rName string) string {
@@ -6523,7 +6531,7 @@ resource "aws_db_instance" "test" {
   backup_retention_period = 0
   engine                  = "mysql"
   engine_version          = "5.6.41"
-  identifier              = %[1]q
+  identifier              = %q
   instance_class          = "db.m3.medium"
   name                    = "mydb"
   password                = "mustbeeightcharaters"
@@ -6540,7 +6548,7 @@ resource "aws_db_instance" "test" {
   backup_retention_period               = 0
   engine                                = "mysql"
   engine_version                        = "5.6.41"
-  identifier                            = %[1]q
+  identifier                            = %q
   instance_class                        = "db.m3.medium"
   name                                  = "mydb"
   password                              = "mustbeeightcharaters"
@@ -6560,7 +6568,7 @@ resource "aws_kms_key" "test" {
 
 resource "aws_db_instance" "test" {
   engine                  = "mysql"
-  identifier              = %[1]q
+  identifier              = %q
   instance_class          = "db.m3.medium"
   allocated_storage       = 5
   backup_retention_period = 0
@@ -6583,7 +6591,7 @@ resource "aws_db_instance" "test" {
   backup_retention_period               = 0
   engine                                = "mysql"
   engine_version                        = "5.6.41"
-  identifier                            = %[1]q
+  identifier                            = %q
   instance_class                        = "db.m3.medium"
   name                                  = "mydb"
   password                              = "mustbeeightcharaters"
@@ -6603,12 +6611,12 @@ resource "aws_db_instance" "test" {
   backup_retention_period               = 0
   engine                                = "mysql"
   engine_version                        = "5.6.41"
-  identifier                            = %[1]q
+  identifier                            = %q
   instance_class                        = "db.m3.medium"
   name                                  = "mydb"
   password                              = "mustbeeightcharaters"
   performance_insights_enabled          = true
-  performance_insights_retention_period = %[2]d
+  performance_insights_retention_period = %d
   skip_final_snapshot                   = true
   username                              = "foo"
 }
@@ -6644,7 +6652,7 @@ resource "aws_db_instance" "source" {
   backup_retention_period = 1
   engine                  = "mysql"
   engine_version          = "5.6.41"
-  identifier              = "%s-source"
+  identifier              = "%[1]s-source"
   instance_class          = "db.m3.medium"
   password                = "mustbeeightcharaters"
   username                = "tfacctest"
@@ -6652,7 +6660,7 @@ resource "aws_db_instance" "source" {
 }
 
 resource "aws_db_instance" "test" {
-  identifier                            = %q
+  identifier                            = %[1]q
   instance_class                        = aws_db_instance.source.instance_class
   performance_insights_enabled          = true
   performance_insights_kms_key_id       = aws_kms_key.test.arn
@@ -6660,7 +6668,7 @@ resource "aws_db_instance" "test" {
   replicate_source_db                   = aws_db_instance.source.id
   skip_final_snapshot                   = true
 }
-`, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_SnapshotIdentifier_PerformanceInsightsEnabled(rName string) string {
@@ -6691,7 +6699,7 @@ resource "aws_db_instance" "source" {
   allocated_storage   = 5
   engine              = "mysql"
   engine_version      = "5.6.41"
-  identifier          = "%s-source"
+  identifier          = "%[1]s-source"
   instance_class      = "db.m3.medium"
   password            = "avoid-plaintext-passwords"
   username            = "tfacctest"
@@ -6700,11 +6708,11 @@ resource "aws_db_instance" "source" {
 
 resource "aws_db_snapshot" "test" {
   db_instance_identifier = aws_db_instance.source.id
-  db_snapshot_identifier = %q
+  db_snapshot_identifier = %[1]q
 }
 
 resource "aws_db_instance" "test" {
-  identifier                            = %q
+  identifier                            = %[1]q
   instance_class                        = aws_db_instance.source.instance_class
   performance_insights_enabled          = true
   performance_insights_kms_key_id       = aws_kms_key.test.arn
@@ -6712,7 +6720,7 @@ resource "aws_db_instance" "test" {
   snapshot_identifier                   = aws_db_snapshot.test.id
   skip_final_snapshot                   = true
 }
-`, rName, rName, rName)
+`, rName)
 }
 
 func testAccAWSDBInstanceConfig_NoDeleteAutomatedBackups(rName string) string {
