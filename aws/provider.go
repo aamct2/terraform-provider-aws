@@ -417,6 +417,7 @@ func Provider() *schema.Provider {
 			"aws_appmesh_virtual_router":                              resourceAwsAppmeshVirtualRouter(),
 			"aws_appmesh_virtual_service":                             resourceAwsAppmeshVirtualService(),
 			"aws_appsync_api_key":                                     resourceAwsAppsyncApiKey(),
+			"aws_appsync_api_cache":                                   resourceAwsAppsyncApiCache(),
 			"aws_appsync_datasource":                                  resourceAwsAppsyncDatasource(),
 			"aws_appsync_function":                                    resourceAwsAppsyncFunction(),
 			"aws_appsync_graphql_api":                                 resourceAwsAppsyncGraphqlApi(),
